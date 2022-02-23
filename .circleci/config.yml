@@ -1,42 +1,48 @@
-# Java Gradle CircleCI 2.0 configuration file
-#
-# Check https://circleci.com/docs/2.0/language-java/ for more details
-#
 version: 2
 jobs:
   build:
     docker:
-      # specify the version you desire here
-      - image: circleci/openjdk:8-jdk
-
-      # Specify service dependencies here if necessary
-      # CircleCI maintains a library of pre-built images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
-      # - image: circleci/postgres:9.4
-
-    working_directory: ~/repo
-
-    environment:
-      # Customize the JVM maximum heap limit
-      JVM_OPTS: -Xmx3200m
-      TERM: dumb
-
+      - image: circleci/openjdk:11-jdk
     steps:
       - checkout
-
-      # Download and cache dependencies
       - restore_cache:
-          keys:
-            - v1-dependencies-{{ checksum "build.gradle" }}
-            # fallback to using the latest cache if no exact match is found
-            - v1-dependencies-
-
-      - run: gradle dependencies
-
+          key:gradle-repo-{{ .Branch }}-{{ checksum "build.gradle" }}
+      - run:
+          command: |
+            chmod +x gradlew
+            ./gradlew build
+          no_output_timeout: 30m
       - save_cache:
+          key: gradle-repo-{{ .Branch }}-{{ checksum "build.gradle" }}
           paths:
             - ~/.gradle
-          key: v1-dependencies-{{ checksum "build.gradle" }}
-
-      # run tests!
-      - run: gradle test
+      - store_artifacts:
+          path: build/libs
+          destination: demo
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .circleci/*
+            - build/libs/*
+  staging:
+    machine: true
+    steps:
+      - attach_workspace:
+          at: .
+      - run: |
+          aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 207438050703.dkr.ecr.ap-northeast-2.amazonaws.com
+          docker build -t ocj_test
+          docker tag ocj_test:latest 207438050703.dkr.ecr.ap-northeast-2.amazonaws.com/ocj_test:latest
+          docker push 207438050703.dkr.ecr.ap-northeast-2.amazonaws.com/ocj_test:latest
+workflows:
+  version: 2
+  build:
+    jobs:
+      - build:
+          filters:
+            branches:
+              only: /master.*/
+      - staging:
+          requires:
+            - build
+          context: demo-test
