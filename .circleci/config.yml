@@ -30,7 +30,7 @@ jobs:
       - attach_workspace:
           at: .
       - run: |
-          aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 207438050703.dkr.ecr.ap-northeast-2.amazonaws.com
+          aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin 207438050703.dkr.ecr.ap-northeast-2.amazonaws.com
           docker build -t ocj_test
           docker tag ocj_test:latest 207438050703.dkr.ecr.ap-northeast-2.amazonaws.com/ocj_test:latest
           docker push 207438050703.dkr.ecr.ap-northeast-2.amazonaws.com/ocj_test:latest
