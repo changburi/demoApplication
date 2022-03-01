@@ -18,3 +18,7 @@ workflows:
           repo: ocj_test
           skip-when-tags-exist: false
           tag: 'latest,ocj_test'
+      - build:
+          filters:
+            branches:
+              only: /master.*/
