@@ -1,54 +1,20 @@
-version: 2
-jobs:
-  build:
-    docker:
-      - image: circleci/openjdk:11-jdk
-    steps:
-      - checkout
-      - restore_cache:
-          key:gradle-repo-{{ .Branch }}-{{ checksum "build.gradle" }}
-      - run:
-          command: |
-            chmod +x gradlew
-            ./gradlew build
-          no_output_timeout: 30m
-      - save_cache:
-          key: gradle-repo-{{ .Branch }}-{{ checksum "build.gradle" }}
-          paths:
-            - ~/.gradle
-      - store_artifacts:
-          path: build/libs
-          destination: demo
-      - persist_to_workspace:
-          root: .
-          paths:
-            - .circleci/*
-            - build/libs/*
-  staging:
-    machine: true
-    steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: $AWS_ACCESS_KEY_ID
-          aws-secret-access-key: $AWS_SECRET_ACCESS_KEY
-          aws-region: $AWS_DEFAULT_REGION
-      - attach_workspace:
-          at: .
-      - run: |
-          aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin 207438050703.dkr.ecr.ap-northeast-2.amazonaws.com
-          docker build -t ocj_test
-          docker tag ocj_test:latest 207438050703.dkr.ecr.ap-northeast-2.amazonaws.com/ocj_test:latest
-          docker push 207438050703.dkr.ecr.ap-northeast-2.amazonaws.com/ocj_test:latest
+version: '2.1'
+orbs:
+  aws-ecr: circleci/aws-ecr@7.3.0
 workflows:
-  version: 2
-  build:
+  build_and_push_image:
     jobs:
-      - build:
-          filters:
-            branches:
-              only: /master.*/
-      - staging:
-          requires:
-            - build
+      - aws-ecr/build-and-push-image:
+          account-url: AWS_ECR_ACCOUNT_URL_ENV_VAR_NAME
+          aws-access-key-id: AWS_ACCESS_KEY_ID
+          aws-secret-access-key: AWS_SECRET_ACCESS_KEY
           context: demo-test
+          create-repo: true
+          dockerfile: Dockerfile
+          no-output-timeout: 20m
+          path: ./
+          profile-name:
+          region: AWS_DEFAULT_REGION
+          repo: AWS_ECR_URL
+          skip-when-tags-exist: false
+          tag: 'latest,ocj_test'
