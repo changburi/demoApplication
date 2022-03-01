@@ -12,13 +12,9 @@ workflows:
           create-repo: true
           dockerfile: Dockerfile
           no-output-timeout: 20m
-          path: ./
+          path: .
           profile-name:
           region: AWS_DEFAULT_REGION
           repo: ocj_test
           skip-when-tags-exist: false
           tag: 'latest,ocj_test'
-      - build:
-          filters:
-            branches:
-              only: /master.*/
