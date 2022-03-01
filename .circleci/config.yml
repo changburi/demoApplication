@@ -5,7 +5,7 @@ workflows:
   build_and_push_image:
     jobs:
       - aws-ecr/build-and-push-image:
-          account-url: AWS_ACCOUNT_ID
+          account-url: AWS_ECR_URL
           aws-access-key-id: AWS_ACCESS_KEY_ID
           aws-secret-access-key: AWS_SECRET_ACCESS_KEY
           context: demo-test
@@ -15,6 +15,6 @@ workflows:
           path: ./
           profile-name:
           region: AWS_DEFAULT_REGION
-          repo: AWS_ECR_URL
+          repo: ocj_test
           skip-when-tags-exist: false
           tag: 'latest,ocj_test'
